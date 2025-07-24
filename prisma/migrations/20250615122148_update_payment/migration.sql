@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `Order` ADD COLUMN `amount` DOUBLE NULL,
+    ADD COLUMN `currency` VARCHAR(191) NULL,
+    ADD COLUMN `paymentId` VARCHAR(191) NULL,
+    ADD COLUMN `status` VARCHAR(191) NULL;

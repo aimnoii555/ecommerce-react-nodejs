@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String?
+  name      String?
+  picture   String?
+  role      String   @default("user")
+  enabled   Boolean  @default(true)
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  carts     Cart[]
+  orders    Order[]
+}
+
+model Product {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String?          @db.Text
+  price       Float
+  sold        Int              @default(0)
+  quantity    Int
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  categoryId  Int?
+  images      Image[]
+  category    Category?        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  cartItem    ProductOnCart[]
+  orderItems  ProductOnOrder[]
+
+  @@index([categoryId], map: "Product_categoryId_idx") // ✅ เปลี่ยนชื่อ index ไม่ให้ชนกับ FK
+}
+
+model Order {
+  id          Int              @id @default(autoincrement())
+  cartTotal   Float
+  orderStatus String           @default("No Process")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  userId      Int
+  user        User             @relation(fields: [userId], references: [id])
+  products    ProductOnOrder[]
+  paymentId   String?
+  amount      Float?
+  status      String?
+  currency    String?
+
+  @@index([userId], map: "Order_userId_idx")
+}
+
+model ProductOnOrder {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  orderId   Int
+  count     Int
+  price     Float
+  orders    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "ProductOnOrder_orderId_fk")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductOnOrder_productId_fk")
+
+  @@index([orderId], map: "ProductOnOrder_orderId_fkey")
+  @@index([productId], map: "ProductOnOrder_productId_fkey")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+model Cart {
+  id        Int             @id @default(autoincrement())
+  cartTotal Float
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  userId    Int
+  user      User            @relation(fields: [userId], references: [id])
+  products  ProductOnCart[]
+
+  @@index([userId], map: "Cart_userId_idx")
+}
+
+model ProductOnCart {
+  id        Int     @id @default(autoincrement())
+  cartId    Int
+  productId Int
+  count     Int
+  price     Float
+  carts     Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade, map: "ProductOnCart_cartId_fk")
+  products  Product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductOnCart_productId_fk")
+
+  @@index([cartId], map: "ProductOnCart_cartId_fkey")
+  @@index([productId], map: "ProductOnCart_productId_fkey")
+}
+
+model Image {
+  id         Int      @id @default(autoincrement())
+  asset_id   String
+  public_id  String
+  url        String
+  secure_url String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade, map: "Image_productId_fk")
+
+  @@index([productId], map: "Image_productId_fkey")
+}
